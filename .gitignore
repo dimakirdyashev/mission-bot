@@ -1,0 +1,6 @@
+node_modules
+.env
+public/uploads
+data/cards.json
+.DS_Store
+
