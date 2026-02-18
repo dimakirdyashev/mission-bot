@@ -1,273 +1,535 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Секретная миссия</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>23 февраля • Секретная миссия</title>
+  <style>
+    :root{
+      --bg:#061109;
+      --bg2:#041006;
+      --card: rgba(7,21,12,.92);
+      --border: rgba(185,255,204,.16);
+      --ink:#b9ffcc;
+      --ink2:#7dff9a;
+      --muted: rgba(185,255,204,.72);
+      --ok:#19ff7a;
+      --danger:#ff5a5a;
+      --shadow: 0 22px 60px rgba(0,0,0,.55);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 20% 0%, rgba(25,255,122,.18), transparent 60%),
+        radial-gradient(900px 500px at 80% 10%, rgba(185,255,204,.12), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2) 70%, #020b04);
+      overflow:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(60px 40px at 10% 30%, rgba(55,120,80,.22), transparent 70%),
+        radial-gradient(90px 60px at 30% 60%, rgba(40,100,65,.18), transparent 70%),
+        radial-gradient(80px 50px at 70% 35%, rgba(65,140,95,.16), transparent 70%),
+        radial-gradient(120px 80px at 85% 70%, rgba(45,115,75,.18), transparent 70%),
+        radial-gradient(70px 50px at 55% 15%, rgba(30,85,55,.20), transparent 70%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 2px, transparent 2px 4px);
+      mix-blend-mode: overlay;
+      opacity:.7;
+    }
 
-<style>
-.actions{
-  display:flex;
-  gap:18px;
-  margin-top:20px;
-}
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .card{
+      width:min(920px, 100%);
+      background: linear-gradient(180deg, var(--card), rgba(4,16,8,.92));
+      border:1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .card::after{
+      content:"";
+      position:absolute; inset:-2px;
+      background: repeating-linear-gradient(
+        180deg,
+        rgba(255,255,255,.03) 0px,
+        rgba(255,255,255,.03) 1px,
+        transparent 2px,
+        transparent 6px
+      );
+      opacity:.22;
+      pointer-events:none;
+      mix-blend-mode: overlay;
+    }
 
-.btn{
-  padding:16px 28px;
-  border-radius:14px;
-  font-weight:700;
-  letter-spacing:1px;
-  border:2px solid #1aff9c;
-  background:transparent;
-  color:#1aff9c;
-  cursor:pointer;
-  transition:.25s;
-}
+    .topbar{
+      padding:14px 18px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      position:relative;
+      z-index:2;
+    }
+    .tags{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .tag{
+      padding:6px 10px;
+      border:1px solid rgba(25,255,122,.22);
+      background: rgba(25,255,122,.08);
+      border-radius:999px;
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--ink2);
+      white-space:nowrap;
+    }
 
-.btn.yes:hover{
-  background:#1aff9c;
-  color:#001b12;
-  box-shadow:0 0 20px #1aff9c66;
-}
+    .content{ padding:22px 18px 18px; position:relative; z-index:2; }
 
-.btn.no{
-  border-color:#ff4d4d;
-  color:#ff4d4d;
-}
+    h1{
+      margin:0 0 10px;
+      font-size: clamp(22px, 3.6vw, 42px);
+      line-height:1.12;
+      text-transform:uppercase;
+      letter-spacing:.02em;
+    }
+    .sub{
+      margin:0 0 14px;
+      color: rgba(185,255,204,.82);
+      font-size: clamp(13px, 1.7vw, 16px);
+      line-height:1.55;
+    }
 
-.btn.no:hover{
-  transform:translateX(40px);
-  box-shadow:0 0 20px #ff4d4d55;
-}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 880px){
+      body{ overflow:auto; }
+      .grid{ grid-template-columns:1fr; }
+    }
 
-.log{
-  margin-top:25px;
-  border:1px solid rgba(0,255,170,.25);
-  border-radius:14px;
-  padding:16px;
-  font-family:monospace;
-  line-height:1.6;
-  background:rgba(0,0,0,.45);
-}
+    .panel{
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .panelTitle{
+      margin:0 0 10px;
+      font-size:12px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color: rgba(185,255,204,.75);
+    }
 
-body{
-  margin:0;
-  font-family: system-ui, Arial;
-  background: radial-gradient(circle at top,#063a2b,#02140f 70%);
-  color:#caffde;
-}
+    .line{ display:flex; gap:10px; margin:8px 0; font-size:13px; line-height:1.5; }
+    .key{ min-width: 128px; color: rgba(185,255,204,.62); }
+    .val b{ color: var(--ink2); }
 
-.container{
-  max-width:820px;
-  margin:30px auto;
-  padding:20px;
-}
+    .controls{
+      margin-top:14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
 
-.header{
-  margin-bottom:20px;
-}
+    .btn{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      padding:12px 14px;
+      font-family:inherit;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-size:13px;
+      border-radius:12px;
+      min-height:44px;
+      user-select:none;
+      transition: transform .08s ease, filter .2s ease, background .2s ease, border-color .2s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+    }
+    .btn:active{ transform: translateY(1px); }
 
-.chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-bottom:18px;
-}
+    .btn-ok{
+      background: rgba(25,255,122,.12);
+      color: var(--ok);
+      border: 1px solid rgba(25,255,122,.30);
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(25,255,122,.10);
+    }
+    .btn-ok:hover{ filter: brightness(1.1); }
 
-.chip{
-  padding:8px 14px;
-  border:1px solid rgba(202,255,222,.25);
-  border-radius:999px;
-  font-size:14px;
-  background:rgba(0,0,0,.25);
-}
+    .btn-no{
+      background: rgba(255,90,90,.10);
+      color: rgba(255,90,90,.95);
+      border: 1px solid rgba(255,90,90,.28);
+      border-radius: 999px;
+      position:relative;
+    }
 
-.card{
-  background:rgba(0,0,0,.35);
-  border:1px solid rgba(202,255,222,.15);
-  border-radius:18px;
-  padding:22px;
-}
+    .noZone{
+      position:relative;
+      min-width: 210px;
+      min-height: 62px;
+      border:1px dashed rgba(255,90,90,.25);
+      border-radius: 16px;
+      padding:8px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      overflow:hidden;
+    }
 
-h1{
-  margin-top:0;
-}
+    .log{
+      margin-top:12px;
+      border:1px solid rgba(185,255,204,.14);
+      background: rgba(0,0,0,.24);
+      border-radius: 14px;
+      padding:12px;
+      min-height: 96px;
+      color: rgba(185,255,204,.88);
+      font-size:13px;
+      line-height:1.45;
+      overflow:auto;
+      max-height: 170px;
+    }
+    .muted{ color: rgba(185,255,204,.62); }
 
-.sub{
-  opacity:.85;
-  line-height:1.5;
-}
+    .folder{
+      border:1px solid rgba(185,255,204,.16);
+      background: rgba(0,0,0,.22);
+      border-radius: 18px;
+      padding:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .stamp{
+      position:absolute;
+      right:12px; top:12px;
+      padding:6px 10px;
+      border:2px dashed rgba(255,90,90,.75);
+      color: rgba(255,90,90,.9);
+      font-weight:1000;
+      letter-spacing:.14em;
+      transform: rotate(8deg);
+      border-radius: 10px;
+      text-transform:uppercase;
+      background: rgba(255,90,90,.08);
+      white-space:nowrap;
+    }
+    .folder h3{
+      margin:0 0 10px;
+      font-size:13px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color: rgba(185,255,204,.82);
+    }
+    .folder p{
+      margin:0;
+      font-size:13px;
+      line-height:1.55;
+      color: rgba(185,255,204,.78);
+    }
 
-.box{
-  margin-top:18px;
-  padding:16px;
-  border-radius:14px;
-  border:1px solid rgba(202,255,222,.18);
-  background:rgba(255,255,255,.03);
-}
+    .screen{ display:none; }
+    .screen.active{ display:block; }
 
-.buttons{
-  margin-top:25px;
-  display:flex;
-  gap:15px;
-}
+    .hero{
+      margin-top:10px;
+      border:1px solid rgba(25,255,122,.22);
+      background: rgba(25,255,122,.06);
+      border-radius: 18px;
+      padding:14px;
+    }
+    .hero h2{
+      margin:0 0 10px;
+      font-size: clamp(18px, 2.2vw, 24px);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color: rgba(185,255,204,.95);
+    }
+    .hero p{
+      margin:0 0 10px;
+      white-space:pre-wrap;
+      line-height:1.65;
+      color: rgba(185,255,204,.88);
+    }
+    .sign{
+      margin-top:10px;
+      color: rgba(185,255,204,.72);
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
 
-button{
-  padding:14px 22px;
-  border-radius:12px;
-  font-size:16px;
-  border:none;
-  cursor:pointer;
-}
+    .backRow{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .btn-ghost{
+      background: rgba(185,255,204,.06);
+      color: rgba(185,255,204,.88);
+      border: 1px solid rgba(185,255,204,.16);
+    }
 
-.yes{
-  background:#1f8f55;
-  color:white;
-}
-
-.no{
-  background:#402222;
-  color:#ffbdbd;
-  position:relative;
-}
-
-.hidden{
-  display:none;
-}
-
-.log{
-  margin-top:20px;
-  font-family:monospace;
-  line-height:1.5;
-  color:#9effc8;
-}
-</style>
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(185,255,204,.18);
+      color: rgba(185,255,204,.92);
+      padding:10px 12px;
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.5);
+      max-width: min(720px, calc(100% - 28px));
+      display:none;
+      z-index:999;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .toast.show{ display:block; animation: pop .18s ease-out; }
+    @keyframes pop{
+      from{ transform:translateX(-50%) translateY(10px); opacity:0; }
+      to{ transform:translateX(-50%) translateY(0); opacity:1; }
+    }
+  </style>
 </head>
-
 <body>
-
-<div class="container">
-
-  <div class="chips">
-    <span class="chip">23 ФЕВРАЛЯ</span>
-    <span class="chip">СЕКРЕТНАЯ МИССИЯ</span>
-    <span class="chip" id="chipScreen">ЭКРАН: ВВОДНАЯ</span>
-  </div>
-
-  <div class="card">
-
-    <!-- ===== SCREEN 1 ===== -->
-    <!-- ====== SCREEN 1: INTRO ====== -->
-<section id="screenIntro">
-
-  <h1>БОЕЦ! ПОСТУПИЛА ВВОДНАЯ: ПРИНЯТЬ ПОЗДРАВЛЕНИЯ.</h1>
-
-  <p class="sub">
-    Объект: <b><%= d.to || "БОЕЦ" %></b> • Уровень допуска: <b>СОВЕРШЕННО СЕКРЕТНО</b><br/>
-    Отказ расценивается как дезертирство. Выбирай аккуратно 😄
-  </p>
-
-  <div class="box">
-    <b>ПРОТОКОЛ 23-ФЕВ</b><br/><br/>
-
-    Операция:
-    <b>
-      <%= (d.gift && d.gift.trim()) ? d.gift : "Секретная миссия 2.0" %>
-    </b><br/>
-
-    Цель: улыбка бойца + 1 обнимашка<br/>
-    Условие: нажать <b>«ТАК ТОЧНО!»</b>
-  </div>
-
-  <div class="actions">
-    <button id="btnYes" class="btn yes">ТАК ТОЧНО!</button>
-    <button id="btnNo" class="btn no">НИКАК НЕТ</button>
-  </div>
-
-  <div class="log" id="log"></div>
-
-</section>
-
-
-    <!-- ===== SCREEN 2 ===== -->
-    <section id="screenMsg" class="hidden">
-
-      <h1>ПОЗДРАВЛЕНИЕ ПРИНЯТО. ШТАБ ОДОБРЯЕТ ✅</h1>
-
-      <p class="sub">
-        Боец <b><%= d.to || "" %></b>, поздравляю с 23 февраля!<br>
-        Ниже — секретное сообщение 😎
-      </p>
-
-      <div class="box">
-        <%- (d.text || "").replace(/\n/g,"<br>") %><br><br>
-        <b>— <%= d.from || "Штаб" %></b>
+  <div class="wrap">
+    <div class="card" role="application" aria-label="Открытка 23 февраля: Секретная миссия">
+      <div class="topbar">
+        <div class="tags">
+          <span class="tag">23 февраля</span>
+          <span class="tag">секретная миссия</span>
+        </div>
+        <div class="tags">
+          <span class="tag" id="statusTag">экран: вводная</span>
+        </div>
       </div>
 
-    </section>
+      <div class="content">
+        <!-- SCREEN 1 -->
+        <section class="screen active" id="screenIntro">
+          <h1>БОЕЦ! ПОСТУПИЛА ВВОДНАЯ: ПРИНЯТЬ ПОЗДРАВЛЕНИЯ.</h1>
+          <p class="sub">
+            Объект: <b id="toName">БОЕЦ</b> • Уровень допуска: <b>СОВЕРШЕННО СЕКРЕТНО</b><br/>
+            Отказ расценивается как дезертирство. Выбирай аккуратно 😄
+          </p>
 
+          <div class="grid">
+            <div class="panel">
+              <div class="panelTitle">Протокол 23-ФЕВ</div>
+              <div class="line"><div class="key">Операция:</div><div class="val" id="opName">«Носки & Ужин 2.0»</div></div>
+              <div class="line"><div class="key">Цель:</div><div class="val">улыбка бойца + 1 обнимашка</div></div>
+              <div class="line"><div class="key">Условие:</div><div class="val"><b>Нажать “ТАК ТОЧНО!”</b></div></div>
+
+              <div class="controls">
+                <button class="btn btn-ok" id="btnYes" type="button">ТАК ТОЧНО!</button>
+
+                <div class="noZone" id="noZone" aria-label="Зона уклонения кнопки">
+                  <button class="btn btn-no" id="btnNo" type="button">НИКАК НЕТ</button>
+                </div>
+              </div>
+
+              <div class="log" id="log" aria-live="polite">
+                <div class="muted">[Система] Ожидаю решение бойца…</div>
+              </div>
+            </div>
+
+            <div class="folder">
+              <div class="stamp">СОВ. СЕКРЕТНО</div>
+              <h3>Папка дела № 23-ФЕВ</h3>
+              <p>
+                Внутри — поздравление и секретная часть миссии.<br/>
+                Разрешено улыбаться. Запрещено отказываться 😎
+              </p>
+              <p style="margin-top:10px; color: rgba(185,255,204,.72);">
+                Подсказка: кнопка “НИКАК НЕТ” тренирована штабом и умеет уходить от преследования.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SCREEN 2 -->
+        <section class="screen" id="screenCongrats">
+          <h1>ПОЗДРАВЛЕНИЕ ПРИНЯТО. ШТАБ ОДОБРЯЕТ ✅</h1>
+          <p class="sub">
+            Боец <b id="toName2">БОЕЦ</b>, поздравляю с 23 февраля!<br/>
+            Ниже — секретное сообщение, доступ только по нажатию “ТАК ТОЧНО!” 😄
+          </p>
+
+          <div class="hero">
+            <h2 id="missionTitle">МИССИЯ: “СЕГОДНЯ ОТДЫХАТЬ”</h2>
+            <p id="congratsText"></p>
+            <div class="sign">— <span id="fromName">ШТАБ</span></div>
+          </div>
+
+          <div class="backRow">
+            <button class="btn btn-ghost" id="btnBack" type="button">Вернуться к вводной</button>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-const btnYes = document.getElementById("btnYes");
-const btnNo = document.getElementById("btnNo");
-const intro = document.getElementById("screenIntro");
-const msg = document.getElementById("screenMsg");
-const chip = document.getElementById("chipScreen");
-const log = document.getElementById("log");
+  <div class="toast" id="toast"></div>
 
-let tries = 0;
+  <script>
+    // ДАННЫЕ ИЗ СЕРВЕРА (из res.render("card", { d: card }))
+    // Важно: JSON.stringify безопасно кладёт строки как данные, а не HTML
+    const DATA = <%- JSON.stringify({
+      to: (d && d.to) ? d.to : "БОЕЦ",
+      from: (d && d.from) ? d.from : "ШТАБ",
+      text: (d && d.text) ? d.text : "",
+      gift: (d && d.gift) ? d.gift : "",
+      where: (d && d.where) ? d.where : "",
+      hasGift: !!(d && d.hasGift)
+    }) %>;
 
-// Убегающая кнопка НЕТ
-btnNo.addEventListener("mouseover", ()=>{
-  tries++;
-  btnNo.style.position="relative";
-  btnNo.style.left=(Math.random()*200-100)+"px";
-  btnNo.style.top=(Math.random()*80-40)+"px";
-  log.innerHTML += "[ШТАБ] Отказ не принят. Попробуйте ещё раз<br>";
-});
+    // ==== DOM ====
+    const statusTag = document.getElementById("statusTag");
+    const screenIntro = document.getElementById("screenIntro");
+    const screenCongrats = document.getElementById("screenCongrats");
+    const btnYes = document.getElementById("btnYes");
+    const btnNo = document.getElementById("btnNo");
+    const noZone = document.getElementById("noZone");
+    const log = document.getElementById("log");
+    const toast = document.getElementById("toast");
 
-// Нажали ДА
-btnYes.onclick = ()=>{
-  intro.classList.add("hidden");
-  msg.classList.remove("hidden");
-  chip.innerText="ЭКРАН: ПОЗДРАВЛЕНИЕ";
-};
-<script>
+    const toUpper = (s) => String(s || "").trim().toUpperCase() || "БОЕЦ";
 
-const log = document.getElementById("log");
-const btnYes = document.getElementById("btnYes");
-const btnNo = document.getElementById("btnNo");
+    document.getElementById("toName").textContent = toUpper(DATA.to);
+    document.getElementById("toName2").textContent = toUpper(DATA.to);
+    document.getElementById("fromName").textContent = toUpper(DATA.from);
 
-function addLog(text, color="#9effc7"){
-  const time = new Date().toLocaleTimeString().slice(0,5);
-  const line = document.createElement("div");
-  line.innerHTML = `[${time}] ${text}`;
-  line.style.color = color;
-  log.appendChild(line);
-  log.scrollTop = log.scrollHeight;
-}
+    // "Операция" из подарка: если есть — показываем, иначе дефолт
+    const op = (DATA.gift && String(DATA.gift).trim()) ? `«${String(DATA.gift).trim()}»` : "«Носки & Ужин 2.0»";
+    document.getElementById("opName").textContent = op;
 
-setTimeout(()=>addLog("Штаб: отказ не принят. Рекомендуем «ТАК ТОЧНО!»"),400);
+    // Текст поздравления
+    document.getElementById("congratsText").textContent = DATA.text || "С 23 февраля! 🫡";
 
-btnYes.onclick = ()=>{
-  addLog("Принято ✅ Протокол 23-ФЕВ выполнен.","#00ff9c");
-  setTimeout(()=>addLog("Открываю доступ к поздравлению..."),900);
-  setTimeout(()=>{
-    document.getElementById("screenIntro").classList.add("hidden");
-    document.getElementById("screenMsg").classList.remove("hidden");
-  },1700);
-};
+    function setScreen(name){
+      const isCongrats = name === "congrats";
+      screenIntro.classList.toggle("active", !isCongrats);
+      screenCongrats.classList.toggle("active", isCongrats);
+      statusTag.textContent = "экран: " + (isCongrats ? "поздравление" : "вводная");
+    }
 
-btnNo.onmouseenter = ()=>{
-  btnNo.style.position="relative";
-  btnNo.style.left=(Math.random()*120-60)+"px";
-  addLog("Ошибка доступа! 🚫 «НИКАК НЕТ» временно заблокирована.","#ff5a5a");
-};
+    function pushLog(text, tone="info"){
+      const stamp = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      const color =
+        tone === "danger" ? "rgba(255,90,90,.95)" :
+        tone === "ok" ? "rgba(25,255,122,.95)" :
+        "rgba(185,255,204,.90)";
+      const line = document.createElement("div");
+      line.style.margin = "6px 0";
+      line.innerHTML = `<span class="muted">[${stamp}]</span> <span style="color:${color}">${text}</span>`;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
 
-</script>
+    function showToast(text){
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=> toast.classList.remove("show"), 1600);
+    }
 
+    // ==== УБЕГАЮЩАЯ КНОПКА ====
+    let escaped = false;
+    let noCaughtClicks = 0;
+
+    const caughtTexts = [
+      "Опа! Поймал 😄 Но отказ всё равно отклонён штабом. Возвращаю на исходную!",
+      "Ловкость 80 lvl! Но “НИКАК НЕТ” — учебная. Протокол всё равно требует “ТАК ТОЧНО!” 😎",
+      "Ты быстрый! Но это была приманка. Штаб смеётся и просит нажать “ТАК ТОЧНО!” 🫡",
+      "Засчитано! НО: отказ расценивается как дезертирство. Спасаю тебя от трибунала 😄"
+    ];
+
+    function makeNoAbsolute(){
+      if(escaped) return;
+      escaped = true;
+      btnNo.style.position = "absolute";
+      btnNo.style.left = "10px";
+      btnNo.style.top = "10px";
+    }
+
+    function moveNoButton(){
+      makeNoAbsolute();
+      const zone = noZone.getBoundingClientRect();
+      const btn = btnNo.getBoundingClientRect();
+      const pad = 8;
+      const maxX = Math.max(pad, zone.width - btn.width - pad);
+      const maxY = Math.max(pad, zone.height - btn.height - pad);
+
+      const x = Math.floor(Math.random() * (maxX - pad + 1)) + pad;
+      const y = Math.floor(Math.random() * (maxY - pad + 1)) + pad;
+
+      btnNo.style.left = x + "px";
+      btnNo.style.top = y + "px";
+    }
+
+    const flee = () => moveNoButton();
+    btnNo.addEventListener("mouseenter", flee);
+    btnNo.addEventListener("mousemove", flee);
+    btnNo.addEventListener("touchstart", (e)=>{ e.preventDefault(); moveNoButton(); }, {passive:false});
+
+    btnNo.addEventListener("click", () => {
+      noCaughtClicks++;
+      const msg = caughtTexts[Math.floor(Math.random()*caughtTexts.length)];
+      showToast(msg);
+      pushLog("Ошибка доступа! 🚫 “НИКАК НЕТ” временно заблокирована.", "danger");
+      pushLog("Штаб: отказ не принят. Рекомендуем “ТАК ТОЧНО!”", "info");
+
+      const scale = Math.max(0.5, 1 - noCaughtClicks * 0.12);
+      btnNo.style.transform = `scale(${scale})`;
+      setTimeout(()=>{ btnNo.style.transform = "scale(1)"; }, 650);
+
+      makeNoAbsolute();
+      btnNo.style.left = "10px";
+      btnNo.style.top = "10px";
+      moveNoButton();
+    });
+
+    // ==== ТАК ТОЧНО -> ПЕРЕХОД ====
+    btnYes.addEventListener("click", () => {
+      pushLog("Принято ✅ Протокол 23-ФЕВ выполнен.", "ok");
+      pushLog("Открываю доступ к поздравлению…", "info");
+      showToast("МИССИЯ ПРИНЯТА ✅");
+      setTimeout(()=> setScreen("congrats"), 420);
+    });
+
+    document.getElementById("btnBack").addEventListener("click", () => {
+      setScreen("intro");
+      pushLog("Возврат на исходную. Штаб наблюдает 👀", "info");
+    });
+
+    setTimeout(()=>pushLog("Связь со штабом установлена 📶", "info"), 500);
+    setTimeout(()=>pushLog("Внимание: обнаружен высокий уровень крутости бойца 💪", "info"), 1000);
+  </script>
 </body>
 </html>
-
