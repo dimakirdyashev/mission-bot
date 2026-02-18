@@ -6,6 +6,50 @@
 <title>Секретная миссия</title>
 
 <style>
+.actions{
+  display:flex;
+  gap:18px;
+  margin-top:20px;
+}
+
+.btn{
+  padding:16px 28px;
+  border-radius:14px;
+  font-weight:700;
+  letter-spacing:1px;
+  border:2px solid #1aff9c;
+  background:transparent;
+  color:#1aff9c;
+  cursor:pointer;
+  transition:.25s;
+}
+
+.btn.yes:hover{
+  background:#1aff9c;
+  color:#001b12;
+  box-shadow:0 0 20px #1aff9c66;
+}
+
+.btn.no{
+  border-color:#ff4d4d;
+  color:#ff4d4d;
+}
+
+.btn.no:hover{
+  transform:translateX(40px);
+  box-shadow:0 0 20px #ff4d4d55;
+}
+
+.log{
+  margin-top:25px;
+  border:1px solid rgba(0,255,170,.25);
+  border-radius:14px;
+  padding:16px;
+  font-family:monospace;
+  line-height:1.6;
+  background:rgba(0,0,0,.45);
+}
+
 body{
   margin:0;
   font-family: system-ui, Arial;
@@ -113,30 +157,37 @@ button{
   <div class="card">
 
     <!-- ===== SCREEN 1 ===== -->
-    <section id="screenIntro">
+    <!-- ====== SCREEN 1: INTRO ====== -->
+<section id="screenIntro">
 
-      <h1>БОЕЦ! ПОСТУПИЛА ВВОДНАЯ</h1>
+  <h1>БОЕЦ! ПОСТУПИЛА ВВОДНАЯ: ПРИНЯТЬ ПОЗДРАВЛЕНИЯ.</h1>
 
-      <p class="sub">
-        Объект: <b><%= d.to || "БОЕЦ" %></b> • Уровень допуска: <b>СОВЕРШЕННО СЕКРЕТНО</b><br>
-        Отказ расценивается как дезертирство 😄
-      </p>
+  <p class="sub">
+    Объект: <b><%= d.to || "БОЕЦ" %></b> • Уровень допуска: <b>СОВЕРШЕННО СЕКРЕТНО</b><br/>
+    Отказ расценивается как дезертирство. Выбирай аккуратно 😄
+  </p>
 
-      <div class="box">
-        <b>ПРОТОКОЛ 23-ФЕВ</b><br><br>
-        Операция: <b><%= d.gift || "«Секретная операция»" %></b><br>
-        Цель: улыбка бойца + 1 обнимашка<br>
-        Условие: нажать <b>«ТАК ТОЧНО!»</b>
-      </div>
+  <div class="box">
+    <b>ПРОТОКОЛ 23-ФЕВ</b><br/><br/>
 
-      <div class="buttons">
-        <button class="yes" id="btnYes">ТАК ТОЧНО!</button>
-        <button class="no" id="btnNo">НИКАК НЕТ</button>
-      </div>
+    Операция:
+    <b>
+      <%= (d.gift && d.gift.trim()) ? d.gift : "Секретная миссия 2.0" %>
+    </b><br/>
 
-      <div class="log" id="log"></div>
+    Цель: улыбка бойца + 1 обнимашка<br/>
+    Условие: нажать <b>«ТАК ТОЧНО!»</b>
+  </div>
 
-    </section>
+  <div class="actions">
+    <button id="btnYes" class="btn yes">ТАК ТОЧНО!</button>
+    <button id="btnNo" class="btn no">НИКАК НЕТ</button>
+  </div>
+
+  <div class="log" id="log"></div>
+
+</section>
+
 
     <!-- ===== SCREEN 2 ===== -->
     <section id="screenMsg" class="hidden">
@@ -183,6 +234,38 @@ btnYes.onclick = ()=>{
   msg.classList.remove("hidden");
   chip.innerText="ЭКРАН: ПОЗДРАВЛЕНИЕ";
 };
+<script>
+
+const log = document.getElementById("log");
+const btnYes = document.getElementById("btnYes");
+const btnNo = document.getElementById("btnNo");
+
+function addLog(text, color="#9effc7"){
+  const time = new Date().toLocaleTimeString().slice(0,5);
+  const line = document.createElement("div");
+  line.innerHTML = `[${time}] ${text}`;
+  line.style.color = color;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+setTimeout(()=>addLog("Штаб: отказ не принят. Рекомендуем «ТАК ТОЧНО!»"),400);
+
+btnYes.onclick = ()=>{
+  addLog("Принято ✅ Протокол 23-ФЕВ выполнен.","#00ff9c");
+  setTimeout(()=>addLog("Открываю доступ к поздравлению..."),900);
+  setTimeout(()=>{
+    document.getElementById("screenIntro").classList.add("hidden");
+    document.getElementById("screenMsg").classList.remove("hidden");
+  },1700);
+};
+
+btnNo.onmouseenter = ()=>{
+  btnNo.style.position="relative";
+  btnNo.style.left=(Math.random()*120-60)+"px";
+  addLog("Ошибка доступа! 🚫 «НИКАК НЕТ» временно заблокирована.","#ff5a5a");
+};
+
 </script>
 
 </body>
