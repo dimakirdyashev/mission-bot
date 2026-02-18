@@ -1,11 +1,16 @@
 // server.js
 require("dotenv").config();
+const path = require("path");
 
 const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
+// ===== EJS =====
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
 const { Telegraf, Markup } = require("telegraf");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -339,9 +344,21 @@ function minimalCardHTML() {
 }
 
 app.get("/card/:id", async (req, res) => {
-  // Если позже ты добавишь views/card.html — можно заменить на res.sendFile.
-  return res.type("html").send(minimalCardHTML());
+  const id = req.params.id;
+
+  // читаем cards.json
+  let store = { cards: {} };
+  try {
+    store = JSON.parse(fs.readFileSync("./data/cards.json", "utf8"));
+  } catch (e) {}
+
+  const card = store.cards?.[id];
+  if (!card) return res.status(404).send("Открытка не найдена");
+
+  // показываем страницу из views/card.ejs
+  return res.render("card", { card, id, BASE_URL });
 });
+
 
 // ===== Telegram bot =====
 const bot = new Telegraf(BOT_TOKEN);
