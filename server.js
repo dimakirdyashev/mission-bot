@@ -1,14 +1,19 @@
 // server.js
 require("dotenv").config();
 const path = require("path");
-
 const fs = require("fs");
 const fsp = require("fs/promises");
 const crypto = require("crypto");
 const express = require("express");
+
+const app = express(); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
+
 // ===== EJS =====
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// дальше уже твой код...
+
 
 const { Telegraf, Markup } = require("telegraf");
 
