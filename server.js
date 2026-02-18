@@ -342,21 +342,15 @@ function minimalCardHTML() {
 </html>`;
 }
 
-app.get("/card/:id", async (req, res) => {
+app.get("/card/:id", (req, res) => {
   const id = req.params.id;
 
-  // читаем cards.json
-  let store = { cards: {} };
-  try {
-    store = JSON.parse(fs.readFileSync("./data/cards.json", "utf8"));
-  } catch (e) {}
+  const card = cards?.cards?.[id]; // как у тебя хранится
+  if (!card) return res.status(404).send("Card not found");
 
-  const card = store.cards?.[id];
-  if (!card) return res.status(404).send("Открытка не найдена");
-
-  // показываем страницу из views/card.ejs
-  return res.render("card", { card, id, BASE_URL });
+  return res.render("card", { d: card });
 });
+
 
 
 // ===== Telegram bot =====
