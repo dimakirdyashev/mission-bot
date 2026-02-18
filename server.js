@@ -5,28 +5,19 @@ const fs = require("fs");
 const fsp = require("fs/promises");
 const crypto = require("crypto");
 const express = require("express");
-
-const app = express(); // ← ВОТ ЭТОГО НЕ ХВАТАЛО
-
-// ===== EJS =====
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-
-// дальше уже твой код...
-
-
 const { Telegraf, Markup } = require("telegraf");
 
+// ===== ENV =====
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const BASE_URL = process.env.APP_URL || "http://localhost:3000";
 const PORT = process.env.PORT || 3000;
 
-
 if (!BOT_TOKEN) {
-  console.error("❌ BOT_TOKEN не задан. Проверь .env");
+  console.error("❌ BOT_TOKEN не задан. Проверь .env / Render env");
   process.exit(1);
 }
 
+// ===== Paths =====
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
 const DB_PATH = path.join(DATA_DIR, "cards.json");
@@ -34,6 +25,7 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const UPLOADS_DIR = path.join(PUBLIC_DIR, "uploads");
 const DEMOS_DIR = path.join(PUBLIC_DIR, "demos");
 
+// ===== Helpers =====
 function id(len = 10) {
   return crypto.randomBytes(Math.ceil(len / 2)).toString("hex").slice(0, len);
 }
@@ -44,7 +36,6 @@ async function ensureDirs() {
   await fsp.mkdir(UPLOADS_DIR, { recursive: true });
   await fsp.mkdir(DEMOS_DIR, { recursive: true });
 
-  // db init if missing
   try {
     await fsp.access(DB_PATH, fs.constants.F_OK);
   } catch {
@@ -83,38 +74,37 @@ async function downloadToFile(url, outPath) {
   await fsp.writeFile(outPath, buf);
 }
 
+async function attachTelegramFile(ctx, fileId, cardId, kind, mimeHint = "") {
+  const link = await ctx.telegram.getFileLink(fileId);
+  const cardDir = path.join(UPLOADS_DIR, cardId);
+  await fsp.mkdir(cardDir, { recursive: true });
+
+  const ext = extFromMime(mimeHint) || path.extname(String(link.pathname)) || "";
+  const filename = `${kind}${ext || ""}`;
+  const outPath = path.join(cardDir, filename);
+
+  await downloadToFile(link.href, outPath);
+
+  return `${BASE_URL}/static/uploads/${cardId}/${filename}`;
+}
+
+// ===== Copy / styles =====
 const RECIPIENTS = {
   boyfriend: {
     label: "🎖 Парню/мужу",
-    styles: {
-      cute: "💘 Милое",
-      humor: "😄 С юмором",
-      brutal: "🪖 Брутальное",
-    },
+    styles: { cute: "💘 Милое", humor: "😄 С юмором", brutal: "🪖 Брутальное" },
   },
   dad: {
     label: "👨 Папе",
-    styles: {
-      warm: "❤️ Тёплое и душевное",
-      humor: "🙂 С лёгким юмором",
-      respect: "🎗 Серьёзное с уважением",
-    },
+    styles: { warm: "❤️ Тёплое и душевное", humor: "🙂 С лёгким юмором", respect: "🎗 Серьёзное с уважением" },
   },
   friend: {
     label: "🧑‍🤝‍🧑 Другу",
-    styles: {
-      friendly: "😂 Смешно и по-дружески",
-      roast: "😈 Дерзко (подкол)",
-      army: "🪖 Брутально как из армии",
-    },
+    styles: { friendly: "😂 Смешно и по-дружески", roast: "😈 Дерзко (подкол)", army: "🪖 Брутально как из армии" },
   },
   colleague: {
     label: "👔 Коллеге",
-    styles: {
-      official: "✅ Официальное",
-      humor: "😄 Лёгкий юмор",
-      original: "✨ Оригинальное",
-    },
+    styles: { official: "✅ Официальное", humor: "😄 Лёгкий юмор", original: "✨ Оригинальное" },
   },
 };
 
@@ -125,6 +115,7 @@ const DEMOS = {
   colleague: `${BASE_URL}/static/demos/colleague.mp4`,
 };
 
+// ===== Keyboards =====
 function kbStart() {
   return Markup.inlineKeyboard([
     [Markup.button.callback("🎁 Хочу отправить поздравление", "go_send")],
@@ -166,13 +157,6 @@ function kbGiftYesNo() {
   ]);
 }
 
-function kbSkip(stepKey) {
-  return Markup.inlineKeyboard([
-    [Markup.button.callback("⏭ Пропустить", `skip:${stepKey}`)],
-    [Markup.button.callback("⬅️ Назад", `back:${stepKey}`)],
-  ]);
-}
-
 function kbJustSkip(stepKey) {
   return Markup.inlineKeyboard([[Markup.button.callback("⏭ Пропустить", `skip:${stepKey}`)]]);
 }
@@ -188,7 +172,7 @@ function defaultText(draft) {
   return `С 23 февраля, ${to}!`;
 }
 
-// ===== Sessions (in memory) =====
+// ===== Sessions =====
 const sessions = new Map();
 function getSession(userId) {
   if (!sessions.has(userId)) {
@@ -255,25 +239,17 @@ async function createCardAndSave(draft) {
   return cardId;
 }
 
-async function attachTelegramFile(ctx, fileId, cardId, kind, mimeHint = "") {
-  const link = await ctx.telegram.getFileLink(fileId);
-  const cardDir = path.join(UPLOADS_DIR, cardId);
-  await fsp.mkdir(cardDir, { recursive: true });
-
-  const ext = extFromMime(mimeHint) || path.extname(String(link.pathname)) || "";
-  const filename = `${kind}${ext || ""}`;
-  const outPath = path.join(cardDir, filename);
-
-  await downloadToFile(link.href, outPath);
-
-  // public URL
-  return `${BASE_URL}/static/uploads/${cardId}/${filename}`;
-}
-
-// ===== Express app =====
+// ===== Express (ONE app) =====
 const app = express();
+
+// EJS
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+// static
 app.use("/static", express.static(PUBLIC_DIR));
 
+// API
 app.get("/api/card/:id", async (req, res) => {
   try {
     const db = await readDB();
@@ -281,82 +257,23 @@ app.get("/api/card/:id", async (req, res) => {
     if (!c) return res.status(404).json({ error: "not_found" });
     return res.json(c);
   } catch (e) {
+    console.error(e);
     return res.status(500).json({ error: "server_error" });
   }
 });
 
-function minimalCardHTML() {
-  return `<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Открытка 23 февраля</title>
-<style>
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0b120c;color:#d6ffe2}
-  .wrap{max-width:860px;margin:0 auto;padding:20px}
-  .card{background:rgba(0,0,0,.35);border:1px solid rgba(214,255,226,.15);border-radius:18px;padding:16px}
-  h1{margin:0 0 10px;font-size:22px}
-  .muted{opacity:.75}
-  img,video{max-width:100%;border-radius:14px;border:1px solid rgba(214,255,226,.12)}
-  .box{margin-top:12px;padding:12px;border-radius:14px;border:1px solid rgba(214,255,226,.12);background:rgba(255,255,255,.03)}
-  pre{white-space:pre-wrap;line-height:1.55;margin:10px 0 0}
-  audio{width:100%}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <h1 id="title">Загрузка…</h1>
-    <div class="muted" id="meta"></div>
-    <div id="media" style="margin-top:12px"></div>
-    <div class="box">
-      <pre id="text"></pre>
-    </div>
-    <div class="box" id="gift" style="display:none"></div>
-    <div class="muted" style="margin-top:12px">— <span id="from"></span></div>
-  </div>
-</div>
-<script>
-  const id = location.pathname.split('/').pop();
-  fetch('/api/card/' + id).then(r=>r.json()).then(d=>{
-    if(d.error){ document.getElementById('title').textContent = 'Открытка не найдена'; return; }
-    document.getElementById('title').textContent = 'С 23 февраля, ' + (d.to || 'БОЕЦ') + '!';
-    document.getElementById('meta').textContent = (d.who||'') + ' • ' + (d.style||'') ;
-    document.getElementById('text').textContent = d.text || '';
-    document.getElementById('from').textContent = (d.from || 'ШТАБ');
-
-    const media = document.getElementById('media');
-    if(d.photo){
-      const img = document.createElement('img'); img.src=d.photo; img.alt='Фото/гиф'; media.appendChild(img);
-    }
-    if(d.video){
-      const v = document.createElement('video'); v.src=d.video; v.controls=true; v.playsInline=true; v.style.marginTop='10px'; media.appendChild(v);
-    }
-    if(d.audio){
-      const a = document.createElement('audio'); a.src=d.audio; a.controls=true; a.style.marginTop='10px'; media.appendChild(a);
-    }
-    if(d.hasGift){
-      const g = document.getElementById('gift');
-      g.style.display='block';
-      g.innerHTML = '<b>Награда:</b> ' + (d.gift||'Сюрприз') + '<br><b>Где найти:</b> ' + (d.where||'Сектор "Кухня"');
-    }
-  });
-</script>
-</body>
-</html>`;
-}
-
-app.get("/card/:id", (req, res) => {
-  const id = req.params.id;
-
-  const card = cards?.cards?.[id]; // как у тебя хранится
-  if (!card) return res.status(404).send("Card not found");
-
-  return res.render("card", { d: card });
+// Page (EJS)
+app.get("/card/:id", async (req, res) => {
+  try {
+    const db = await readDB();
+    const card = db.cards?.[req.params.id];
+    if (!card) return res.status(404).send("Card not found");
+    return res.render("card", { d: card });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).send("Server error");
+  }
 });
-
-
 
 // ===== Telegram bot =====
 const bot = new Telegraf(BOT_TOKEN);
@@ -376,7 +293,6 @@ bot.command("start", async (ctx) => {
   );
 });
 
-// --- Start menu actions
 bot.action("go_send", async (ctx) => {
   const s = getSession(ctx.from.id);
   s.step = "choose_recipient";
@@ -405,7 +321,6 @@ bot.action("back:recipients", async (ctx) => {
   await ctx.editMessageText("Кому отправим поздравление?", kbRecipients("recipient"));
 });
 
-// --- Recipients and styles
 bot.action(/^recipient:(boyfriend|dad|friend|colleague)$/, async (ctx) => {
   const who = ctx.match[1];
   const s = getSession(ctx.from.id);
@@ -427,20 +342,13 @@ bot.action(/^style:(boyfriend|dad|friend|colleague):([a-z_]+)$/, async (ctx) => 
   await ctx.editMessageText("Введи имя получателя (как в открытке):");
 });
 
-// --- Demo flow
 bot.action(/^demo:(boyfriend|dad|friend|colleague)$/, async (ctx) => {
   const who = ctx.match[1];
   const s = getSession(ctx.from.id);
   s.step = "demo_showing";
   await ctx.answerCbQuery();
 
-  // Ответ новым сообщением (так надёжнее)
-  await ctx.reply(
-    `Вот пример для: ${RECIPIENTS[who].label}\nЭто демо-видео (как увидит получатель).`,
-    kbDemoAfter()
-  );
-
-  // Если файла нет — просто скажем
+  await ctx.reply(`Вот пример для: ${RECIPIENTS[who].label}`, kbDemoAfter());
   try {
     await ctx.replyWithVideo(DEMOS[who], { caption: "Демо: «Секретная миссия»" });
   } catch {
@@ -448,7 +356,6 @@ bot.action(/^demo:(boyfriend|dad|friend|colleague)$/, async (ctx) => {
   }
 });
 
-// --- Back buttons for steps
 bot.action("back:text", async (ctx) => {
   const s = getSession(ctx.from.id);
   s.step = "collect_text";
@@ -456,7 +363,6 @@ bot.action("back:text", async (ctx) => {
   await ctx.editMessageText("Напиши текст поздравления (или отправь одним сообщением):");
 });
 
-// --- Gift yes/no
 bot.action(/^gift:(yes|no)$/, async (ctx) => {
   const yn = ctx.match[1];
   const s = getSession(ctx.from.id);
@@ -476,7 +382,6 @@ bot.action(/^gift:(yes|no)$/, async (ctx) => {
   await ctx.editMessageText("Что за подарок ждёт? (напр. «Носки уровня спецназ» 😄)");
 });
 
-// --- Skips
 bot.action(/^skip:(photo|audio|video)$/, async (ctx) => {
   const what = ctx.match[1];
   const s = getSession(ctx.from.id);
@@ -494,25 +399,23 @@ bot.action(/^skip:(photo|audio|video)$/, async (ctx) => {
   }
   if (what === "video") {
     s.draft.video = "";
-    // finalize
     s.step = "finalize";
     const cardId = await createCardAndSave(s.draft);
     const link = `${BASE_URL}/card/${cardId}`;
+
     await ctx.editMessageText(
-  `Готово ✅ Вот ссылка на открытку:\n${link}\n\n(Кнопка появится после деплоя на https-домен)`
-);
+      `Готово ✅ Вот ссылка на открытку:\n${link}\n\n(Кнопка появится после деплоя на https-домен)`
+    );
 
     resetSession(s);
   }
 });
 
-// ===== Text handler (collecting fields) =====
 bot.on("text", async (ctx) => {
   const s = getSession(ctx.from.id);
   const t = (ctx.message.text || "").trim();
 
-  if (t === "/start") return; // handled above
-  if (t === "/cancel") return;
+  if (t === "/start" || t === "/cancel") return;
 
   if (s.step === "collect_to_name") {
     s.draft.to = t;
@@ -523,19 +426,13 @@ bot.on("text", async (ctx) => {
   if (s.step === "collect_from_name") {
     s.draft.from = t;
     s.step = "collect_text";
-
-    // подсказка шаблона
     return ctx.reply(
       "Напиши текст поздравления одним сообщением.\n\nЕсли хочешь — просто отправь «шаблон», и я подставлю готовый текст 🙂"
     );
   }
 
   if (s.step === "collect_text") {
-    if (t.toLowerCase() === "шаблон") {
-      s.draft.text = defaultText(s.draft);
-    } else {
-      s.draft.text = t;
-    }
+    s.draft.text = t.toLowerCase() === "шаблон" ? defaultText(s.draft) : t;
     s.step = "gift_yesno";
     return ctx.reply("Будет подарок?", kbGiftYesNo());
   }
@@ -552,16 +449,13 @@ bot.on("text", async (ctx) => {
     return ctx.reply("Отлично. Пришли фото/гиф (или пропусти):", kbJustSkip("photo"));
   }
 
-  // если пользователь пишет в неподходящий момент
-  return ctx.reply("Я тебя понял 🙂 Но сейчас жду шаг по сценарию. Если хочешь начать заново — /start или отмена /cancel");
+  return ctx.reply("Сейчас жду шаг по сценарию. Если хочешь заново — /start или /cancel");
 });
 
-// ===== Media handlers =====
 bot.on("photo", async (ctx) => {
   const s = getSession(ctx.from.id);
   if (s.step !== "media_photo") return;
 
-  // create temp cardId for uploads stage
   if (!s.cardId) s.cardId = id(12);
 
   const photos = ctx.message.photo;
@@ -629,15 +523,13 @@ bot.on("video", async (ctx) => {
   const url = await attachTelegramFile(ctx, fileId, s.cardId, "video", mime);
   s.draft.video = url;
 
-  // finalize
   s.step = "finalize";
-  const cardId = await createCardAndSave({ ...s.draft, _uploadsId: s.cardId });
+  const cardId = await createCardAndSave(s.draft);
   const link = `${BASE_URL}/card/${cardId}`;
 
   await ctx.reply(
-  `Готово ✅ Вот ссылка на открытку:\n${link}\n\n(Кнопка появится после деплоя на https-домен)`
-);
-
+    `Готово ✅ Вот ссылка на открытку:\n${link}\n\n(Кнопка появится после деплоя на https-домен)`
+  );
 
   resetSession(s);
 });
@@ -657,5 +549,3 @@ bot.on("video", async (ctx) => {
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
 })();
-
-
