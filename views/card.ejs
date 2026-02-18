@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Секретная миссия</title>
+
+<style>
+body{
+  margin:0;
+  font-family: system-ui, Arial;
+  background: radial-gradient(circle at top,#063a2b,#02140f 70%);
+  color:#caffde;
+}
+
+.container{
+  max-width:720px;
+  margin:40px auto;
+  padding:20px;
+}
+
+.chips{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:25px;
+}
+
+.chip{
+  border:1px solid #1aff9c;
+  color:#86ffc8;
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:13px;
+  letter-spacing:1px;
+}
+
+.card{
+  background:#031d16;
+  border-radius:18px;
+  padding:28px;
+  border:1px solid #0c4a37;
+  box-shadow:0 0 30px rgba(0,255,170,.15);
+}
+
+h1{
+  margin-top:0;
+  font-size:28px;
+  color:#a4ffd4;
+}
+
+.button{
+  display:inline-block;
+  margin-top:20px;
+  padding:14px 24px;
+  background:#00ff9c;
+  color:#01251b;
+  border-radius:12px;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+.button-red{
+  background:#2a0000;
+  color:#ff8a8a;
+  margin-left:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="chips">
+  <span class="chip">23 ФЕВРАЛЯ</span>
+  <span class="chip">СЕКРЕТНАЯ МИССИЯ</span>
+  <span class="chip">ЭКРАН: ВВОДНАЯ</span>
+</div>
+
+<div class="card">
+<h1>БОЕЦ, <%= card.toName %>!</h1>
+
+<p>
+Штаб сообщает: сегодня тебе разрешено отдыхать, принимать похвалу и НЕ спорить с тем, кто это написал 😄
+</p>
+
+<p>Отказ расценивается как дезертирство.</p>
+
+<a href="/accept/<%= card.id %>" class="button">ТАК ТОЧНО!</a>
+<a href="#" class="button button-red">НИКАК НЕТ</a>
+
+</div>
+</div>
+</body>
+</html>
